@@ -1,0 +1,7 @@
+{
+  "name": "tradie-plugin-coverage",
+  "dependencies": {
+    "isparta": "^4.0.0",
+    "isparta-loader": "^2.0.0"
+  }
+}
