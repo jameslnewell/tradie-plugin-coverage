@@ -1,6 +1,7 @@
 {
   "name": "tradie-plugin-coverage",
   "dependencies": {
+    "ext-to-regex": "^0.1.0",
     "isparta": "^4.0.0",
     "isparta-loader": "^2.0.0"
   }
