@@ -1,6 +1,12 @@
+'use strict';
+const chalk = require('chalk');
+const sprintf = require('sprintf-js').sprintf;
 const extRegex = require('ext-to-regex');
+const summarizeCoverage = require('istanbul').utils.summarizeCoverage;
 
-module.exports = tradie => {
+module.exports = (tradie, options) => {
+
+  const thresholds = options.thresholds || {};
 
   const extensions = tradie.config.scripts.extensions;
   const scriptRegexp = extRegex(extensions);
@@ -36,15 +42,43 @@ module.exports = tradie => {
 
     });
 
-    tradie.on('test.bundle', bundle => {
+    tradie.on('test.result', result => {
+      const summary = summarizeCoverage(result.coverage);
 
-      var re = /__coverage__='([^;]*)';(\r\n?|\n)/gi,
-        match;
+      //TODO: write the report to disk
 
-      // capture all the matches, there might be multiple
-      while (match = re.exec(bundle.bundle.toString())) {
-        // match[1] contains JSON.stringify(__coverage__)
-        console.log(JSON.parse(match[1]));
+      //print a coverage statistic
+      const printStat = (name, stat, threshold) => {
+        let msg = sprintf('  %20s: %s%% %d/%d (%d skipped)', chalk.bold(name), chalk.bold(sprintf('%.2d', stat.pct)), stat.covered, stat.total, stat.skipped);
+        if (threshold) {
+          if (stat.pct < threshold) {
+            msg = chalk.red.bold(msg);
+          } else {
+            msg = chalk.green(msg);
+          }
+        }
+        console.log(msg);
+      };
+
+      //print a summary of the coverage information
+      console.log('Coverage:');
+      console.log();
+      printStat('Lines', summary.lines, thresholds.lines);
+      printStat('Statements', summary.statements, thresholds.statements);
+      printStat('Functions', summary.functions, thresholds.functions);
+      printStat('Branches', summary.branches, thresholds.branches);
+      console.log();
+
+      //check if a threshold is crossed and whether we should emit an error exit code
+      if (thresholds) {
+        const thresholdCrossed = summary.lines.pct < thresholds.lines
+          || summary.statements.pct < thresholds.statements
+          || summary.functions.pct < thresholds.functions
+          || summary.branches.pct < thresholds.branches
+        ;
+        if (thresholdCrossed) {
+          //trigger an error exit code
+        }
       }
 
     });
