@@ -28,7 +28,7 @@ Run `tradie test`.
     "functions": 90,
     "lines": 90
   },
-  "reporters": ["html"]
+  "reports": ["html"]
 }
 ```
 
