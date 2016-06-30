@@ -11,7 +11,7 @@ const Collector = Istanbul.Collector;
 
 /**
  * @param {object} webpackConfig
- * @param {object} extransions
+ * @param {object} extensions
  */
 function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
   const scriptRegexp = extRegex(extensions);
@@ -99,8 +99,6 @@ function isCoverageLowerThanTheThreshold(summary, thresholds) {
 module.exports = (tradie, options) => {
   const reports = options.reports ? [].concat(options.reports) : ['html'];
   const thresholds = options.thresholds || {};
-
-  console.log('tradie-plugin-coverage');
 
   tradie.on('command.started', context => {
     let summary = null;
