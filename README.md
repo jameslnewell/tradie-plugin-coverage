@@ -22,13 +22,13 @@ Run `tradie test`.
 
 ```json
 {
-  "thresholds": {
-    "statements": 90,
-    "branches": 90,
-    "functions": 90,
-    "lines": 90
+  thresholds: {
+    statements: 90,
+    branches: 90,
+    functions: 90,
+    lines: 90
   },
-  "reports": ["html"]
+  reports: ['html']
 }
 ```
 

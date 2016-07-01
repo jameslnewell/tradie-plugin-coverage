@@ -24,7 +24,7 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
     babel: {}
   };
 
-  const babelLoader = webpackConfig.module.loaders.find(spec => spec.loader === 'babel');
+  const babelLoader = webpackConfig.module.loaders.find(spec => spec.loader === 'babel-loader');
   if (!babelLoader) {
     throw new Error('Loader `babel-loader` is not configured.');
   }
@@ -97,7 +97,7 @@ function isCoverageLowerThanTheThreshold(summary, thresholds) {
 }
 
 module.exports = (tradie, options) => {
-  const reports = options.reports ? [].concat(options.reports) : ['html'];
+  const reports = options.reports ? [].concat(options.reports) : [];
   const thresholds = options.thresholds || {};
 
   tradie.on('command.started', context => {
