@@ -12,13 +12,13 @@ Add the plugin in your `.tradie.js` file:
 
 ```js
 module.exports = {
-  plugins: [['coverage', config]]
+  plugins: [['coverage', {/*config object*/}]]
 };
 ```
 
 Run `tradie test`.
 
-## Configuration
+## Config
 
 ```json
 {
