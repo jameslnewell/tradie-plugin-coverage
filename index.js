@@ -32,7 +32,7 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
   //run `isparta-loader` only on source files
   webpackConfig.module.loaders.push(Object.assign({}, babelLoader, {
     test: path => scriptRegexp.test(path) && !testScriptRegexp.test(path),
-    loader: 'isparta'
+    loader: 'babel-istanbul-loader'
   }));
 
   //modify `babel-loader` to only run on test files
