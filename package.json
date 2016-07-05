@@ -1,6 +1,6 @@
 {
   "name": "tradie-plugin-coverage",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Adds code coverage to `tradie`.",
   "keywords": [
     "tradie",
@@ -19,6 +19,6 @@
     "sprintf-js": "^1.0.3"
   },
   "peerDependencies": {
-    "tradie": "^1.0.0-alpha8"
+    "tradie": "^1.0.0"
   }
 }
