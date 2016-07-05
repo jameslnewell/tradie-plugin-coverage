@@ -111,7 +111,7 @@ module.exports = (tradie, options) => {
     tradie.once('test.webpack.config', webpackConfig => modifyWebpackConfigToInstrumentScripts(webpackConfig, tradie.config.scripts.extensions));
 
     tradie.once('test.result', result => {
-      const coverage = result.coverage;
+      const coverage = result && result.coverage;
 
       if (coverage) {
 
