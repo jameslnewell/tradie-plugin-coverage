@@ -113,12 +113,19 @@ module.exports = (tradie, options) => {
     tradie.once('test.result', result => {
       const coverage = result.coverage;
 
-      //TODO: check coverage exists (otherwise error)
-      summary = summarizeCoverage(coverage);
+      if (coverage) {
 
-      printCoverageSummary(summary, thresholds);
+        //TODO: check coverage exists (otherwise error)
+        summary = summarizeCoverage(coverage);
 
-      writeCoverageReports(coverage, reports, path.join(tradie.config.tmp, 'coverage'));
+        printCoverageSummary(summary, thresholds);
+
+        writeCoverageReports(coverage, reports, path.join(tradie.config.tmp, 'coverage'));
+
+      } else {
+        console.error(chalk.red('Unable to read coverage information.'));
+      }
+
 
     });
 
@@ -126,7 +133,7 @@ module.exports = (tradie, options) => {
 
       //force the command to exit with an error code if the coverage is less than the threshold
       const lowerThanTheThreshold = isCoverageLowerThanTheThreshold(summary, thresholds);
-      if (lowerThanTheThreshold) {
+      if (!summary || lowerThanTheThreshold) {
         context.exitCode = -1;
       }
 
