@@ -17,22 +17,24 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
   const scriptRegexp = extRegex(extensions);
   const testScriptRegexp = extRegex(extensions.map(extension => `.test${extension}`));
 
-  //configure `isparta-loader`
-  webpackConfig.isparta = {
-    embedSource: true,
-    noAutoWrap: true,
-    babel: {}
-  };
-
+  //find the babel loader
   const babelLoader = webpackConfig.module.loaders.find(spec => spec.loader === 'babel-loader');
   if (!babelLoader) {
     throw new Error('Loader `babel-loader` is not configured.');
   }
 
   //run `isparta-loader` only on source files
+  webpackConfig.isparta = {
+    embedSource: true,
+    noAutoWrap: true,
+    babel: {
+      presets: babelLoader.query.presets,
+      plugins: babelLoader.query.plugins
+    }
+  };
   webpackConfig.module.loaders.push(Object.assign({}, babelLoader, {
     test: path => scriptRegexp.test(path) && !testScriptRegexp.test(path),
-    loader: 'babel-istanbul-loader'
+    loader: 'isparta'
   }));
 
   //modify `babel-loader` to only run on test files
@@ -86,58 +88,48 @@ function isCoverageLowerThanTheThreshold(summary, thresholds) {
   //check if a threshold is crossed and whether we should emit an error exit code
   if (thresholds) {
     const thresholdIsLower = summary.lines.pct < thresholds.lines
-      || summary.statements.pct < thresholds.statements
-      || summary.functions.pct < thresholds.functions
-      || summary.branches.pct < thresholds.branches
-    ;
+        || summary.statements.pct < thresholds.statements
+        || summary.functions.pct < thresholds.functions
+        || summary.branches.pct < thresholds.branches
+      ;
     return thresholdIsLower;
   } else {
     return false;
   }
 }
 
-module.exports = (tradie, options) => {
+module.exports = options => tradie => {
   const reports = options.reports ? [].concat(options.reports) : [];
   const thresholds = options.thresholds || {};
 
-  tradie.on('command.started', context => {
-    let summary = null;
+  //only calculate coverage when we're testing
+  if (tradie.command !== 'test') {
+    return;
+  }
 
-    //only show coverage summary on the test command
-    if (context.name !== 'test') {
-      return;
+  let summary = null;
+
+  tradie.once('test.webpack.config', webpackConfig => modifyWebpackConfigToInstrumentScripts(webpackConfig, tradie.script.extensions));
+
+  tradie.once('test.result', result => {
+    const coverage = result.coverage;
+
+    //TODO: check coverage exists (otherwise error)
+    summary = summarizeCoverage(coverage);
+
+    printCoverageSummary(summary, thresholds);
+
+    writeCoverageReports(coverage, reports, path.join(tradie.tmp, 'coverage'));
+
+  });
+
+  tradie.once('exit', context => {
+
+    //force the command to exit with an error code if the coverage is less than the threshold
+    const lowerThanTheThreshold = isCoverageLowerThanTheThreshold(summary, thresholds);
+    if (lowerThanTheThreshold) {
+      context.exitCode = -1;
     }
-
-    tradie.once('test.webpack.config', webpackConfig => modifyWebpackConfigToInstrumentScripts(webpackConfig, tradie.config.scripts.extensions));
-
-    tradie.once('test.result', result => {
-      const coverage = result && result.coverage;
-
-      if (coverage) {
-
-        //TODO: check coverage exists (otherwise error)
-        summary = summarizeCoverage(coverage);
-
-        printCoverageSummary(summary, thresholds);
-
-        writeCoverageReports(coverage, reports, path.join(tradie.config.tmp, 'coverage'));
-
-      } else {
-        console.error(chalk.red('Unable to read coverage information.'));
-      }
-
-
-    });
-
-    tradie.once('command.finished', context => {
-
-      //force the command to exit with an error code if the coverage is less than the threshold
-      const lowerThanTheThreshold = isCoverageLowerThanTheThreshold(summary, thresholds);
-      if (!summary || lowerThanTheThreshold) {
-        context.exitCode = -1;
-      }
-
-    });
 
   });
 

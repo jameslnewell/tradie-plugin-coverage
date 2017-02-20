@@ -8,29 +8,28 @@ Adds code coverage to `tradie`.
 
 ## Usage
 
-Add the plugin in your `.tradie.js` file:
+1. Configure `tradie.config.js`:
 
 ```js
+var coverage = require('tradie-plugin-coverage');
+
 module.exports = {
-  plugins: [['coverage', {/*config object*/}]]
+  plugins: [
+    
+    coverage({
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90
+      },
+      reports: ['html']
+    })
+    
+  ]
 };
 ```
-
-Run `tradie test`.
-
-## Config
-
-```json
-{
-  thresholds: {
-    statements: 90,
-    branches: 90,
-    functions: 90,
-    lines: 90
-  },
-  reports: ['html']
-}
-```
+2. Run `tradie test`.
 
 ## To do
  - consider `remap-istanbul` instead of `isparta`?
