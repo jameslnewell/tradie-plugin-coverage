@@ -1,8 +1,10 @@
 'use strict';
 const path = require('path');
+const webpack = require('webpack');
 const chalk = require('chalk');
 const sprintf = require('sprintf-js').sprintf;
 const extRegex = require('ext-to-regex');
+const extend = require('extend');
 
 const Istanbul = require('istanbul');
 const summarizeCoverage = Istanbul.utils.summarizeCoverage;
@@ -18,27 +20,19 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
   const testScriptRegexp = extRegex(extensions.map(extension => `.test${extension}`));
 
   //find the babel loader
-  const babelLoader = webpackConfig.module.loaders.find(spec => spec.loader === 'babel-loader');
-  if (!babelLoader) {
+  const jsRule = webpackConfig.module.rules.find(rule => rule.use && rule.use.loader  === 'babel-loader');
+  if (!jsRule) {
     throw new Error('Loader `babel-loader` is not configured.');
   }
 
-  //run `isparta-loader` only on source files
-  webpackConfig.isparta = {
-    embedSource: true,
-    noAutoWrap: true,
-    babel: {
-      presets: babelLoader.query.presets,
-      plugins: babelLoader.query.plugins
-    }
-  };
-  webpackConfig.module.loaders.push(Object.assign({}, babelLoader, {
-    test: path => scriptRegexp.test(path) && !testScriptRegexp.test(path),
-    loader: 'isparta'
+  //run babel presets/plugins on test files
+  webpackConfig.module.rules.push(extend(true, {}, jsRule, {
+    test: path => testScriptRegexp.test(path)
   }));
 
-  //modify `babel-loader` to only run on test files
-  babelLoader.test = testScriptRegexp;
+  // //run babel presets/plugins + `babel-plugin-istanbul` on source files
+  jsRule.test = path => scriptRegexp.test(path) && !testScriptRegexp.test(path);
+  jsRule.use.options.plugins = jsRule.use.options.plugins ? [].concat('istanbul', jsRule.use.options.plugins) : ['istanbul'];
 
 }
 
@@ -46,10 +40,6 @@ function writeCoverageReports(coverage, reports, dir) {
   const collector = new Collector();
 
   collector.add(coverage);
-
-  //report.on('done', () => {
-  //  console.log('done');
-  //});
 
   reports.forEach(type => {
     const report = Report.create(type, {dir: dir});
@@ -85,6 +75,11 @@ function printCoverageSummary(summary, thresholds) {
 }
 
 function isCoverageLowerThanTheThreshold(summary, thresholds) {
+
+  if (!summary) {
+    return false;
+  }
+
   //check if a threshold is crossed and whether we should emit an error exit code
   if (thresholds) {
     const thresholdIsLower = summary.lines.pct < thresholds.lines
@@ -96,6 +91,7 @@ function isCoverageLowerThanTheThreshold(summary, thresholds) {
   } else {
     return false;
   }
+
 }
 
 module.exports = options => tradie => {
@@ -114,11 +110,15 @@ module.exports = options => tradie => {
   tradie.once('test.result', result => {
     const coverage = result.coverage;
 
-    //TODO: check coverage exists (otherwise error)
+    if (!coverage) {
+      console.log();
+      console.error(chalk.red('Unable to retrieve coverage information :('));
+      console.log();
+      return;
+    }
+
     summary = summarizeCoverage(coverage);
-
     printCoverageSummary(summary, thresholds);
-
     writeCoverageReports(coverage, reports, path.join(tradie.tmp, 'coverage'));
 
   });

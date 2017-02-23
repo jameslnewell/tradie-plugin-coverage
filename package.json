@@ -1,6 +1,6 @@
 {
   "name": "tradie-plugin-coverage",
-  "version": "2.0.0",
+  "version": "2.0.0-preview.1",
   "description": "Adds code coverage to `tradie`.",
   "keywords": [
     "tradie",
@@ -9,13 +9,12 @@
   ],
   "repository": "jameslnewell/tradie-plugin-coverage",
   "dependencies": {
+    "babel-plugin-istanbul": "^4.0.0",
     "chalk": "^1.1.3",
     "ext-to-regex": "^0.1.0",
-    "isparta-loader": "^2.0.0",
-    "istanbul": "^0.4.4",
     "sprintf-js": "^1.0.3"
   },
   "peerDependencies": {
-    "tradie": "^2.0.0"
+    "tradie": "^1.2.0"
   }
 }
