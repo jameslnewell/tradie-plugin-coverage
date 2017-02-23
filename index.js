@@ -6,10 +6,22 @@ const sprintf = require('sprintf-js').sprintf;
 const extRegex = require('ext-to-regex');
 const extend = require('extend');
 
-const Istanbul = require('istanbul');
-const summarizeCoverage = Istanbul.utils.summarizeCoverage;
-const Report = Istanbul.Report;
-const Collector = Istanbul.Collector;
+const libCoverage = require('istanbul-lib-coverage');
+const libReport = require('istanbul-lib-report');
+const reports = require('istanbul-reports');
+
+function summarizeCoverage(coverage) {
+  const map = libCoverage.createCoverageMap(coverage);
+  const summary = libCoverage.createCoverageSummary();
+
+  map.files().forEach(function (f) {
+    const fc = map.fileCoverageFor(f);
+    const fs = fc.toSummary();
+    summary.merge(fs);
+  });
+
+  return summary;
+}
 
 /**
  * @param {object} webpackConfig
@@ -36,14 +48,17 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
 
 }
 
-function writeCoverageReports(coverage, reports, dir) {
-  const collector = new Collector();
+function writeCoverageReports(coverage, types, dir) {
+  const map = libCoverage.createCoverageMap(coverage);
+  const context = libReport.createContext({
+    dir: dir,
+    // watermarks: this.config.watermarks
+  });
 
-  collector.add(coverage);
+  tree = libReport.summarizers.pkg(map);
 
-  reports.forEach(type => {
-    const report = Report.create(type, {dir: dir});
-    report.writeReport(collector, true);// true => synchronous for simplicity now
+  types.forEach(type => {
+    tree.visit(reports.create(type), context);
   });
 
 }
@@ -95,7 +110,7 @@ function isCoverageLowerThanTheThreshold(summary, thresholds) {
 }
 
 module.exports = options => tradie => {
-  const reports = options.reports ? [].concat(options.reports) : [];
+  const reportTypes = options.reports ? [].concat(options.reports) : [];
   const thresholds = options.thresholds || {};
 
   //only calculate coverage when we're testing
@@ -119,7 +134,7 @@ module.exports = options => tradie => {
 
     summary = summarizeCoverage(coverage);
     printCoverageSummary(summary, thresholds);
-    writeCoverageReports(coverage, reports, path.join(tradie.tmp, 'coverage'));
+    writeCoverageReports(coverage, reportTypes, path.join(tradie.tmp, 'coverage'));
 
   });
 
