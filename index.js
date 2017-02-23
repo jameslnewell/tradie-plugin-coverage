@@ -48,18 +48,16 @@ function modifyWebpackConfigToInstrumentScripts(webpackConfig, extensions) {
 
 }
 
-function writeCoverageReports(coverage, types, dir) {
+function writeCoverageReports(coverage, reportTypes, dir) {
   const map = libCoverage.createCoverageMap(coverage);
   const context = libReport.createContext({
     dir: dir,
     // watermarks: this.config.watermarks
   });
 
-  tree = libReport.summarizers.pkg(map);
+  const tree = libReport.summarizers.pkg(map);
 
-  types.forEach(type => {
-    tree.visit(reports.create(type), context);
-  });
+  reportTypes.forEach(reportType => tree.visit(reports.create(reportType), context));
 
 }
 
